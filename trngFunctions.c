@@ -1,4 +1,4 @@
-/* Copyright 2019 Ron Sutton
+  /* Copyright 2019 Ron Sutton
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation 
 the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -20,7 +20,7 @@ void trngInit(void) {
   MCLK->APBCMASK.reg |= MCLK_APBCMASK_TRNG;    // Activate the CLK_TRNG_APB clock
   NVIC_SetPriority(TRNG_IRQn, 0);              // Set NVIC priority for TRNG to 0 
   NVIC_EnableIRQ(TRNG_IRQn);                   // Connect TRNG to NVIC 
-  TRNG->INTENSET.reg = TRNG_INTENSET_DATARDY;  // Enable the TRNG interrupt
+  TRNG->INTENCLR.reg = TRNG_INTENCLR_DATARDY;  // Disable the TRNG interrupt
   TRNG->CTRLA.reg = TRNG_CTRLA_ENABLE;         // Enable the TRNG peripheral
 
 }
@@ -28,12 +28,12 @@ void trngInit(void) {
 // This function waits for the next random number (signified by a change to rNum) and returns it
 uint32_t trngGetRandomNumber(void)
 {
-    uint32_t i = rNum;                         // get current value of rNum...
-
-    while (i == rNum)                          //  wait for it to change in interrupt handler...
+  uint32_t i = rNum;
+  TRNG->INTENSET.reg = TRNG_INTENSET_DATARDY;  // Enable the TRNG interrupt
+  while (i == rNum)                            // Wait for the random number to change when interrupt occurs...
       ;
-      
-    return rNum;                               //   and return it.
+  TRNG->INTENCLR.reg = TRNG_INTENCLR_DATARDY;  // Disable the TRNG interrupt so it doesn't slow system when TRNG is not needed...
+  return rNum;                                 //  and return the random number.
 }
 
 // This interrupt handler is called when a new random number is available; it reads the random number and clears the interrupt
